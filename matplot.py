@@ -4,106 +4,155 @@ import numpy as np
 
 import tkinter as tk
 from tkinter import ttk
+from tkinter import *
+
+import math
+import datetime as dt
+import time
+from collections import Counter
+import random as rn
 
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 from matplotlib.figure import Figure
 import matplotlib.animation as animation
 from matplotlib import style
+import matplotlib.pyplot as plt
 
 
-LARGE_FONT= ("UTF-8", 12)
-style.use('seaborn')
-limit = np.array([5])
+style.use("seaborn")
 
-#Initialize Figure 
+fig1, ax1 = plt.subplots()
+ax1.set_ylim(ymin = 0, ymax = 50)
+ax1.set_title("Primary Sensor")
+ax1.set_xticklabels([])
+ax1.set_ylabel("Pressure (Torr)")
 
-fig = Figure(figsize=(5,5), dpi=100)
-ax1 = fig.add_subplot(111)
+
+fig2, ax2 = plt.subplots()
+ax2.set_ylim(ymin = 0, ymax = 100)
+ax2.set_title("Secondary Sensor")
+ax2.set_xticklabels([])
+ax2.set_ylabel("Pressure (Torr)")
 
 
-def animate(i):
+x1 = [[0]]
+y1 = [[0]]
+x2 = [[0]]
+y2 = [[0]]
 
-    graph_data = open('test.txt','r').read()
-    lines = graph_data.split('\n')
+TOT = []
+CPM = 0
+temp = 0
 
-    xs = []
-    ys = []
+
+lines_temp = []
+lines_temp.append(ax1.plot([],[])[0])
+
+lines_rh = []
+lines_rh.append(ax2.plot([],[])[0])
+
+
+def animate(t, x, y, lines, ax):
+
+
+    x[0].append(x[0][-1] + 1)
+    y[0].append(rn.randrange(1, 51, 1))
+
+    if len(x[0]) > 20:
+        del x[i][0]
+        del y[i][0]
+
+    lines[0].set_data(x[0],y[0])
+    ax.relim()
+    ax.autoscale_view()
+
+def GetCPM(): 
+
+    global TOT, CPM 
+
+    temp = rn.randint(0,1)
+
+    # Test Case
+
+    if temp == True:
+        TOT.append(True)
+    else:
+        TOT.append(False)
+
+    TOT = TOT[-2750:]
+    count = Counter(TOT)
+    CPM = count[True]
+
+    lbl.config(text = "CPM = {}".format(CPM)) 
+    lbl.after(200, GetCPM) 
+
     
-    for line in lines:
-        if len(line) > 1:
-            x, y = line.split(',')
-            xs.append(float(x))
-            ys.append(float(y))
+class App():
 
-    #If you want to specify the specific numbers for our axis 
-    #ax1.set_yticks([])
+    def __init__(self):
+        self.root = tk.Tk()
+        self.root.title("Application")
+        self.create_notebook()
 
-    ax1.clear()
-    ax1.plot(xs, ys)
+    def create_notebook(self):
 
-    ax1.collections.clear()
+        self.root["padx"] = 2
+        self.root["pady"] = 2
 
-    # Performing the animation
-    ax1.clear()
-    ax1.plot(xs, ys, linewidth=1, color= 'grey')
-
-  
-    #ax1.fill_between(xs, ys, limit[0])
-    ax1.axhline(limit[0], color='k', linewidth=2)
-
-    ax1.fill_between(xs, ys, limit[0], where=(ys > limit[0]), facecolor='g', alpha=0.5, interpolate=True)
-    ax1.fill_between(xs, ys, limit[0], where=(ys < limit[0]), facecolor='r', alpha=0.5, interpolate=True)  
-
-    ax1.set_ylabel('Pressure (torr)')
-    ax1.set_title('Pressure Reading')
-
-
-
-
-class Hub(tk.Tk):
-
-    def __init__(self, *args, **kwargs):
-
-        tk.Tk.__init__(self, *args, **kwargs)
-
-#   If you wanna customize the icon of the tk window, only accepts .ico 
-#        tk.Tk.iconbitmap(self, default="iconname.ico")
-        tk.Tk.wm_title(self, "Hub")
-
-        container = tk.Frame(self)
-        container.pack(side="top", fill="both", expand=True)
+        notebook = ttk.Notebook(self.root)
+        frame01 = ttk.Frame(notebook)
         
-        container.grid_rowconfigure(0,weight=1)
-        container.grid_columnconfigure(0,weight=1)
+        notebook.add(frame01, text = "")
+        
+        notebook.grid(row = 0, column = 0)
 
-        self.frames = {}
+        frame1 = ttk.Frame(frame01)
+        frame1.grid(row = 0, column = 0)
 
-        frame = Start(container, self)
-        self.frames[Start] = frame
-        frame.grid(row=0, column=0, sticky="nsew")
+        canvas1 = FigureCanvasTkAgg(fig1, frame1)
+        canvas1.get_tk_widget().grid(row = 0, column = 0)
 
-        self.show_frame(Start)
+        canvas2 = FigureCanvasTkAgg(fig2, frame1)
+        canvas2.get_tk_widget().grid(row = 0, column = 2)
 
-    def show_frame(self,cont):
+        lbl = ttk.Label(frame1, font = ('Sans Serif', 40, 'bold'), 
+            background = 'purple', 
+            foreground = 'White') 
+        lbl.grid(row=2, column = 1)
 
-        frame = self.frames[cont]
-        frame.tkraise()
+        def GetCPM(): 
 
-class Start(tk.Frame):
+            global TOT, CPM 
 
-    def __init__(self, parent, controller):
-        tk.Frame.__init__(self, parent)
+            temp = rn.randint(0,1)
 
-        canvas = FigureCanvasTkAgg(fig, self)
-        canvas.draw()
-        canvas.get_tk_widget().pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
+            # Test Case
 
-        toolbar = NavigationToolbar2Tk(canvas, self)
-        toolbar.update()
-        canvas._tkcanvas.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+            if temp == True:
+                TOT.append(True)
+            else:
+                TOT.append(False)
 
-#Updates every 1 second
+            TOT = TOT[-2750:]
+            count = Counter(TOT)
+            CPM = count[True]
 
-app = Hub()
-ani = animation.FuncAnimation(fig, animate, interval = 300)
-app.mainloop()
+            lbl.config(text = "CPM = {}".format(CPM)) 
+            lbl.after(200, GetCPM) 
+
+        GetCPM()
+
+
+        quit_button = ttk.Button(self.root, text = "Quit", 
+                                 command = self.root.destroy)
+        quit_button.grid(row = 1, column = 4)
+
+
+app = App()
+
+ani_1 = animation.FuncAnimation(fig1, animate, interval = 500, 
+                                fargs=(x1,y1, lines_temp, ax1))
+ani_2 = animation.FuncAnimation(fig2, animate, interval = 500, 
+                                fargs=(x2,y2, lines_rh, ax2))
+
+app.root.mainloop()
