@@ -20,51 +20,66 @@ import matplotlib.pyplot as plt
 
 
 style.use("seaborn")
+limit = np.array([5])
 
 fig1, ax1 = plt.subplots()
 ax1.set_ylim(ymin = 0, ymax = 50)
 ax1.set_title("Primary Sensor")
-ax1.set_xticklabels([])
 ax1.set_ylabel("Pressure (Torr)")
 
 
 fig2, ax2 = plt.subplots()
 ax2.set_ylim(ymin = 0, ymax = 100)
 ax2.set_title("Secondary Sensor")
-ax2.set_xticklabels([])
 ax2.set_ylabel("Pressure (Torr)")
 
-
-x1 = [[0]]
-y1 = [[0]]
-x2 = [[0]]
-y2 = [[0]]
+x1, y1 = [], []
+x2, y2 = [], []
 
 TOT = []
 CPM = 0
 temp = 0
 
-
-lines_temp = []
-lines_temp.append(ax1.plot([],[])[0])
-
-lines_rh = []
-lines_rh.append(ax2.plot([],[])[0])
+def GetValues(i, x, y, ax):
 
 
-def animate(t, x, y, lines, ax):
+    volts2 = rn.uniform(3,6)
+
+    x.append(dt.datetime.now().strftime('%H: %M: %S.%f'))
+    y.append(float(volts2))
+
+    x = x[-50:]
+    y = y[-50:]
+
+    ax.clear()
+    ax.plot(x, y, linewidth=1, color= 'k')
+
+    ax.fill_between(x, y, limit[0], where=(y > limit[0]), facecolor='forestgreen', alpha=0.7, interpolate=True)
+    ax.fill_between(x, y, limit[0], where=(y < limit[0]), facecolor='darkred', alpha=0.7, interpolate=True)
+
+    ax.set_xticklabels([])
 
 
-    x[0].append(x[0][-1] + 1)
-    y[0].append(rn.randrange(1, 51, 1))
 
-    if len(x[0]) > 20:
-        del x[i][0]
-        del y[i][0]
 
-    lines[0].set_data(x[0],y[0])
-    ax.relim()
-    ax.autoscale_view()
+def animate(i, x, y, ax):
+
+
+    volts = rn.uniform(1,3)
+
+    x.append(dt.datetime.now().strftime('%H: %M: %S.%f'))
+    y.append(float(volts))
+
+    x = x[-50:]
+    y = y[-50:]
+
+    ax.clear()
+    ax.plot(x, y, linewidth=1, color= 'k')
+
+    ax.fill_between(x, y, limit[0], where=(y > limit[0]), facecolor='forestgreen', alpha=0.7, interpolate=True)
+    ax.fill_between(x, y, limit[0], where=(y < limit[0]), facecolor='darkred', alpha=0.7, interpolate=True)
+
+    ax.set_xticklabels([])
 
 def GetCPM(): 
 
@@ -151,8 +166,8 @@ class App():
 app = App()
 
 ani_1 = animation.FuncAnimation(fig1, animate, interval = 500, 
-                                fargs=(x1,y1, lines_temp, ax1))
-ani_2 = animation.FuncAnimation(fig2, animate, interval = 500, 
-                                fargs=(x2,y2, lines_rh, ax2))
+                                fargs=(x1, y1, ax1))
+ani_2 = animation.FuncAnimation(fig2, GetValues, interval = 500, 
+                                fargs=(x2, y2, ax2))
 
 app.root.mainloop()
