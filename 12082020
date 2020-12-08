@@ -1,0 +1,164 @@
+import matplotlib
+matplotlib.use("TkAgg")
+import numpy as np
+
+import tkinter as tk
+from tkinter import ttk
+from tkinter import *
+
+import math
+import datetime as dt
+import time
+from collections import Counter
+import random as rn
+
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
+from matplotlib.figure import Figure
+import matplotlib.animation as animation
+from matplotlib import style
+import matplotlib.pyplot as plt
+
+import Adafruit_ADS1x15 as ADS
+import threading as td
+import queue as q
+
+
+adc1 = ADS.ADS1115(address=0x48)
+adc2 = ADS.ADS1115(address=0x49)
+GAIN = 2/3
+
+
+style.use("seaborn")
+limit = np.array([5])
+
+fig1, ax1 = plt.subplots()
+fig2, ax2 = plt.subplots()
+
+x1, y1 = [], []
+x2, y2 = [], []
+
+TOT = []
+CPM = 0
+temp = 0
+
+
+def animate1(i, x, y, ax):
+
+    value = adc1.read_adc_difference(0, gain=GAIN)
+    volts = value *(((10.8/4.627)*(6.144)/32768))
+    Pa = math.exp((volts-10)/1.33)
+
+    x.append(dt.datetime.now().strftime('%H: %M: %S.%f'))
+    y.append(float(volts))
+
+    x = x[-25:]
+    y = y[-25:]
+
+    ax.clear()
+    ax.plot(x, y, linewidth=1, color= 'k')
+    
+    ax.set_title("Primary Sensor")
+    ax.set_xticklabels([])
+    ax.set_ylabel("Pressure (Torr)")
+
+    ax.fill_between(x, y, limit[0], where=(y > limit[0]), facecolor='forestgreen', alpha=0.7, interpolate=True)
+    ax.fill_between(x, y, limit[0], where=(y < limit[0]), facecolor='darkred', alpha=0.7, interpolate=True)
+
+    
+def animate2(i, x, y, ax):
+
+
+    value = adc1.read_adc_difference(3, gain=GAIN)
+    volts = value *(((10.8/4.627)*(6.144)/32768))
+    Pa = math.exp((volts-10)/1.33)
+
+    x.append(dt.datetime.now().strftime('%H: %M: %S.%f'))
+    y.append(float(volts))
+
+    x = x[-50:]
+    y = y[-50:]
+
+    ax.clear()
+    ax.plot(x, y, linewidth=1, color= 'k')
+    
+    ax.set_title("Secondary Sensor")
+    ax.set_xticklabels([])
+    ax.set_ylabel("Pressure (Torr)")
+
+    ax.fill_between(x, y, limit[0], where=(y > limit[0]), facecolor='forestgreen', alpha=0.7, interpolate=True)
+    ax.fill_between(x, y, limit[0], where=(y < limit[0]), facecolor='darkred', alpha=0.7, interpolate=True)
+
+
+class App():
+
+    def __init__(self):
+        self.root = tk.Tk()
+        self.root.title("Application")
+        self.create_notebook()
+
+    def create_notebook(self):
+
+        self.root["padx"] = 2
+        self.root["pady"] = 2
+
+        notebook = ttk.Notebook(self.root)
+        frame = ttk.Frame(notebook)
+        
+        notebook.add(frame, text = "")
+        
+        notebook.grid(row = 0, column = 0)
+
+        frame1 = ttk.Frame(frame)
+        frame1.grid(row = 0, column = 0)
+
+        canvas1 = FigureCanvasTkAgg(fig1, frame1)
+        canvas1.get_tk_widget().grid(row = 0, column = 0)
+
+        canvas2 = FigureCanvasTkAgg(fig2, frame1)
+        canvas2.get_tk_widget().grid(row = 0, column = 2)
+
+        lbl = ttk.Label(frame1, font = ('Sans Serif', 40, 'bold'), 
+            background = 'white', 
+            foreground = 'black') 
+        lbl.grid(row=2, column = 1)
+
+        def GetCPM(): 
+
+            global TOT, CPM
+            
+
+            temp = adc2.read_adc_difference(3,gain=GAIN)
+            
+            if temp < -2 or temp > 2:
+                TOT.append(True)
+            else:
+                TOT.append(False)
+            TOT = TOT[-2314:]
+            count = Counter(TOT)
+            CPM = count[True]
+            #print(temp)
+            #label.config(text = "CPM = {}".format(CPM))
+            lbl.config(text = "CPM = {}".format(CPM))
+            print(dt.datetime.now().strftime('%H: %M: %S.%f'))
+            lbl.after(5, GetCPM)
+    
+        GetCPM()
+
+
+        quit_button = ttk.Button(self.root, text = "Quit", 
+                                 command = self.root.destroy)
+        quit_button.grid(row = 1, column = 4)
+
+    def run(self):
+        t1 = mp.Process(target= GetCPM)
+        t1.start()
+        t1.join()
+
+app = App()
+
+ani_1 = animation.FuncAnimation(fig1, animate1, interval = 1000, 
+                                    fargs=(x1, y1, ax1))
+ani_2 = animation.FuncAnimation(fig2, animate2, interval = 1000, 
+                                    fargs=(x2, y2, ax2))
+
+app.root.mainloop()
