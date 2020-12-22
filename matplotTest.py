@@ -1,118 +1,57 @@
-import matplotlib
-matplotlib.use("TkAgg")
-import numpy as np 
+def runGraph():
 
-import tkinter as tk
-from tkinter import ttk
-from tkinter import *
+    style.use("seaborn")
+    fig1, (ax1, ax2) = plt.subplots(1,2)
 
-import math
-import datetime as dt
-import time
-from collections import Counter
-import random
+    limit = np.array([5])
+    arrRange = 50
 
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
-from matplotlib.figure import Figure
-import matplotlib.animation as animation
-from matplotlib import style
-import matplotlib.pyplot as plt
+    x1, y1 = [], []
+    x2, y2 = [], []
 
 
-style.use('seaborn')
-limit = np.array([5])
+    def animate(i, x, y, ax):
 
-fig = Figure(figsize=(5,5), dpi=100)
-ax1 = fig.add_subplot(111)
+        volts2 = rn.uniform(3,6)
 
-xs = []
-ys = []
+        x.append(dt.datetime.now().strftime('%H: %M: %S.%f'))
+        y.append(float(volts2))
 
-TOT = []
-CPM = 0
-temp = 0
-starttime = time.time()
+        x = x[-arrRange:]
+        y = y[-arrRange:]
 
-def animate(i):
+        ax.clear()
+        ax.plot(x, y, linewidth=1, color= 'k')
 
-    global xs, ys
+        ax.fill_between(x, y, limit[0], where=(y > limit[0]), facecolor='forestgreen', alpha=0.7, interpolate=True)
+        ax.fill_between(x, y, limit[0], where=(y < limit[0]), facecolor='darkred', alpha=0.7, interpolate=True)
 
-    # Code Test - MATPLOTLIB
-
-    volts = random.uniform(4,6)
-
-    # value = adc.read_adc_difference(0, gain=GAIN)
-    # volts = value *(((10.8/4.627)*(6.144)/32768))
-    # Pa = math.exp((volts-10)/1.33)
-
-    xs.append(dt.datetime.now().strftime('%H: %M: %S.%f'))
-    ys.append(float(volts))
-    
-    xs = xs[-50:]
-    ys = ys[-50:]
+        ax.set_xticklabels([])
 
 
-
-# If you want to specify the specific numbers for our axis 
-
-    # ax1.set_yticks([])
-
-    ax1.clear()
-    ax1.plot(xs, ys)
-
-    # Performing the animation
-    ax1.clear()
-    ax1.plot(xs, ys, linewidth=1, color= 'k')
-
-    ax1.fill_between(xs, ys, limit[0], where=(ys > limit[0]), facecolor='forestgreen', alpha=0.7, interpolate=True)
-    ax1.fill_between(xs, ys, limit[0], where=(ys < limit[0]), facecolor='darkred', alpha=0.7, interpolate=True)  
-
-    ax1.set_ylabel('Pressure (torr)', fontname= "Sans Serif", fontsize = 10)
-    # ax1.set_title('[PlaceHolder]', fontname = "Sans Serif", fontsize = 20)
-    
-    ax1.set_xticklabels([])
-
-def GetCPM(): 
-
-    global TOT, CPM 
-
-    temp = random.randint(0,1)
-
-    # Test Case
-
-    if temp == True:
-        TOT.append(True)
-    else:
-        TOT.append(False)
-
-    TOT = TOT[-2750:]
-    count = Counter(TOT)
-    CPM = count[True]
-
-    lbl.config(text = "CPM = {}".format(CPM)) 
-    lbl.after(200, GetCPM) 
-    
-  
-# Styling the label widget so that clock 
-# will look more attractive 
+    def animate2(i, x, y, ax):
 
 
-root = tk.Tk()
-other = tk.Frame(root)
-other.grid(column=0, row =2)
+        volts = rn.uniform(1,3)
 
-canvas = FigureCanvasTkAgg(fig, master=root)
-canvas.draw()
-canvas.get_tk_widget().grid(column=0,row=1)
+        x.append(dt.datetime.now().strftime('%H: %M: %S.%f'))
+        y.append(float(volts))
+
+        x = x[-arrRange:]
+        y = y[-arrRange:]
+
+        ax.clear()
+        ax.plot(x, y, linewidth=1, color= 'k')
+
+        ax.fill_between(x, y, limit[0], where=(y > limit[0]), facecolor='forestgreen', alpha=0.7, interpolate=True)
+        ax.fill_between(x, y, limit[0], where=(y < limit[0]), facecolor='darkred', alpha=0.7, interpolate=True)
+
+        ax.set_xticklabels([])
 
 
-lbl = Label(other, font = ('Sans Serif', 40, 'bold'), 
-            background = 'purple', 
-            foreground = 'White') 
-lbl.grid(row=2, column = 0)
+    ani = animation.FuncAnimation(fig1, animate, fargs=(x1, y1, ax1)
+                        , interval=300, blit=False)
+    ani2 = animation.FuncAnimation(fig1, animate2, fargs=(x2, y2, ax2)
+                        , interval=300, blit=False)
 
-GetCPM()
-
-
-ani = animation.FuncAnimation(fig, animate, np.arange(1, 200), interval=25, blit=False)
-tk.mainloop()
+    plt.show()
